@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../app_constants.dart';
 import '../helpers.dart';
 import '../service/authentication/auth_provider.dart';
@@ -18,6 +18,7 @@ class MainPage extends StatefulWidget {
   @override
   State<MainPage> createState() => _MainPageState();
 
+
   void _signOut(BuildContext context) async {
     try {
       var auth = AuthProvider.of(context).auth;
@@ -29,17 +30,19 @@ class MainPage extends StatefulWidget {
   }
 }
 
+
 class _MainPageState extends State<MainPage> {
 
   AuthStatus authStatus = AuthStatus.notDetermined;
   final Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
   MapStyleTheme mapStyleTheme = MapStyleTheme.night;
   bool isAppInitialized = false;
+  Position? currentPositionOfUser;
 
   //Kew Gardens / TW9 3JR (51.4777125 , -0.2882984)
   static const CameraPosition _keyGardens = CameraPosition(
     target: LatLng(51.4777125 , -0.2882984),
-    zoom: 14.4746,
+    zoom: 15.0,
   );
 
 
@@ -87,6 +90,34 @@ class _MainPageState extends State<MainPage> {
   void setGoogleMapStyle(String googleMapStyle, GoogleMapController controller){
     controller.setMapStyle(googleMapStyle);
   }
+
+  /*getUserCurrentLiveLocation() async{
+    //  should test if location services are enabled:
+    //  https://pub.dev/packages/geolocator
+    var positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
+    currentPositionOfUser = positionOfUser;
+
+    LatLng latLngPositionOfUser = LatLng(currentPositionOfUser!.latitude, currentPositionOfUser!.longitude);
+    //  animate the map to the current position of the user
+    CameraPosition cameraPosition = CameraPosition(target: latLngPositionOfUser);
+    _mapController
+  }*/
+
+
+  //  Can't call async methods in Build()
+  Future<CameraPosition>getUserCurrentLocation(double zoomLevel) async{
+    //  TODO
+    //  should test if location services are enabled:
+    //  https://pub.dev/packages/geolocator
+    var positionOfUser = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
+    currentPositionOfUser = positionOfUser;
+    LatLng latLngPositionOfUser = LatLng(currentPositionOfUser!.latitude, currentPositionOfUser!.longitude);
+    return CameraPosition(target: latLngPositionOfUser, zoom: zoomLevel);
+  }
+
+  /*setCurrentCameraPosition(LatLng target, double zoomLevel){
+    return CameraPosition(target: target, zoom: zoomLevel);
+  }*/
 
 
   @override
