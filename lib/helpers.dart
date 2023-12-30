@@ -1,5 +1,6 @@
 
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 enum MapStyleTheme{
@@ -16,7 +17,7 @@ class Helpers{
       case 'night':
         return "$themesUrl/night_style.json";
       case 'silver':
-        return "$themesUrl/silver.json";
+        return "$themesUrl/silver_style.json";
       default:
         throw const FormatException('Invalid MapStyleTheme!');
     }
@@ -26,20 +27,28 @@ class Helpers{
   //  https://api.flutter.dev/flutter/widgets/DefaultAssetBundle/of.html
   static Future<String?> getThemeFile(MapStyleTheme mapStyleTheme) async{
 
-    String? stringError;
+    String? theme;
+
     var source = _getMapStyleTheme(mapStyleTheme);
     if(source.isEmpty)
       {
-        return stringError;
-      }else{
+        return theme;
+      }
+    else
+      {
         try{
-          return await rootBundle.loadString(source);
+          await rootBundle.loadString(source).then((value) async {
+            theme = value;
+              return theme;
+          });
         }
-        catch(err){
-          return stringError;
+        catch(err)
+        {
+          debugPrint("getThemeFile() failed with the following error: ${err.toString()} ");
+          return theme;
         }
-    }
-
+      }
+    return theme;
   }
 
 

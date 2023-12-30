@@ -1,11 +1,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:petrolsist_app/pages/page_root.dart';
-import 'package:petrolsist_app/service/authentication/auth_provider.dart';
-import 'package:petrolsist_app/service/authentication/authentication_service.dart';
+import 'package:petrolsist_app/app_constants.dart';
 import 'package:petrolsist_app/service/locator.dart';
+import 'package:petrolsist_app/viewmodels/auth_vm.dart';
+import 'package:petrolsist_app/viewmodels/user_vm.dart';
+import 'package:provider/provider.dart';
 
+import 'app_routs.dart';
 
 
 Future<void> requestMapsPermission() async{
@@ -24,24 +26,37 @@ Future<void> main() async {
   await requestMapsPermission();
   runApp(const MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return AuthProvider(
-      auth: AuthenticationService(),
-      key: key,
+    return MultiProvider(
+      providers: [
+      ChangeNotifierProvider(
+        create: (context) => AuthViewModel(),
+      ),
+        ChangeNotifierProvider(
+            create: (context) => UserViewModel(),
+        )
+
+      ],
       child: MaterialApp(
-        title: 'PetrolSist',
-        //  hide Banner
         debugShowCheckedModeBanner: false,
+        title: 'Movies App (MVVM Architecture)',
+        //  https://docs.flutter.dev/cookbook/design/fonts
         theme: ThemeData(
-          useMaterial3: true,
-          primarySwatch: Colors.blue,
+          fontFamily: 'DM Sans',
+          colorScheme: const ColorScheme.dark(),
+          textTheme: const TextTheme(
+
+          ),
         ),
-        home: const RootPage(),
+        initialRoute: AppConsts.rootSplash,
+        onGenerateRoute: Routes.generateRoute,
       ),
     );
   }

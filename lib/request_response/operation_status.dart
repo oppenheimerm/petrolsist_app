@@ -1,10 +1,7 @@
 class OperationStatus{
   bool success = false;
   String? errorMessage;
+  int? errorType;
 
-  OperationStatus(bool success, String? errorMessage)
-  {
-    success = success;
-    errorMessage = errorMessage;
-  }
+  OperationStatus(this.success, this.errorMessage, this.errorType);
 }

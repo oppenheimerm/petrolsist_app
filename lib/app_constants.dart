@@ -81,6 +81,13 @@ AuthStatus authStatusFromString(String string){
 
 
 class AppConsts{
+
+  //  Routes
+  static const String rootSplash = "/splash";
+  static const String rootLogin = "/login";
+  static const String rootHome = "/home";
+  static const String rootSignup = "/signup";
+
   //static const String baseUrl = "https://psusersapi.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
   static const String baseUrl = "http://10.0.2.2:5281";
@@ -99,9 +106,24 @@ class AppConsts{
   static const String refreshToken = 'refreshToken';
   static const String refreshTokenExpiry = 'refreshTokenExpiry';
 
+  static const int OPERATION_SUCCESS = 0;
+  static const int REFRESHED_TOKENS_FOR_USER = 1;
+  static const int PERSISTED_USER_TO_STORAGE = 2;
   //  const message types
   //    3000 range Errors
   static const int NO_SAVED_USER_INSTANCE = 3000;
+  static const int COULD_NOT_AUTHENTICATE_USER = 3001;
+  static const int REFRESHED_TOKENS_FOR_USER_FAIL = 3002;
+  static const int COULD_NOT_COMPLETE_NETWORK_REQEST = 3003;
+  static const int COULD_NOT_DELETE_STORED_USER = 3004;
+  static const int COULD_NOT_PERSIST_USER = 3005;
+  static const int COULD_NOT_PERSIST_KEYVALUE = 3006;
+
+
+  //  const network Errors
+  static const int USER_NOT_FOUND = 404;
+  //  503 Service Unavailable
+  static const int NO_NETWORK_SERVICE = 503;
 
 
   static String? getUrl(ApiRequestType request){
