@@ -1,26 +1,26 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../app_constants.dart';
 import '../../models/login_model.dart';
 import '../../models/user.dart';
-import '../../request_response/operation_status.dart';
-import '../../request_response/parsed_response.dart';
+import '../../request_response/authentication_request_response.dart';
 import '../local_storage.dart';
 
 
+
 abstract class AuthenticationServiceBase {
-  Future<ParsedResponse<UserModel>> requestLoginAPI(String username, String password);
+  Future<AuthenticationRequestResponse> requestLoginAPI(String username, String password);
   Future<UserModel?> currentUser();
-  refreshTokenForUser(UserModel savedUser);
+  Future<UserModel?> refreshTokenForUser(UserModel savedUser);
 }
 
 class AuthenticationService implements AuthenticationServiceBase{
-  final int NO_INTERNET = 404;
 
   @override
-  Future<ParsedResponse<UserModel>> requestLoginAPI(String username, String password) async{
+  Future<AuthenticationRequestResponse> requestLoginAPI(String username, String password) async{
 
     var body = json.encode(<String, String>{
       "emailAddress": username,
@@ -40,12 +40,11 @@ class AuthenticationService implements AuthenticationServiceBase{
         body: body,
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          }
+        }
     );
 
     if (response.statusCode == 200) {
       //  Get cookie data
-      //https://stackoverflow.com/questions/58378960/cant-access-cookie-in-http-response-with-flutter
       String rawCookie = response.headers['set-cookie']!;
       int index = rawCookie.indexOf(';');
       String refreshToken = (index == -1) ? rawCookie : rawCookie.substring(0, index);
@@ -59,64 +58,102 @@ class AuthenticationService implements AuthenticationServiceBase{
 
       // Before calling below we nee:
       //    RefreshTokenExpiry
+      var user = _updateUser(userData,loginTimeStamp, rToken, tokenExpiry);
+
+      /* CODE REPLACED WITH ABOVE
       var user = UserModel(
         userData.id,
-          userData.firstName,
-          userData.lastName,
-          userData.jwtToken,/* short lived JWT access token */
-          userData.initials,
-          userData.photo,
-          userData.emailAddress,
-          AuthStatus.signedIn,
-          loginTimeStamp,/* login timestamp */
-          rToken, /* refreshToken*/
-          tokenExpiry,/* RefreshToken expiry */);
+        userData.firstName,
+        userData.lastName,
+        userData.jwtToken,/* short lived JWT access token */
+        userData.initials,
+        userData.photo,
+        userData.emailAddress,
+        AuthStatus.signedIn,
+        loginTimeStamp,/* login timestamp */
+        rToken, /* refreshToken*/
+        tokenExpiry,/* RefreshToken expiry */);*/
 
       //  Delete stale data
-      //LocalStorageService.deleteUser();
-      var saveUserStatus = await LocalStorageService.persistUser(user);
-      // Should be good to go here!
-      return ParsedResponse(response.statusCode, user);
+      //await getCurrentUser().then((value) async {
+      var saveUserStatus = await LocalStorageService.persistUser(user).then((value) async {
+        if(value.success){
+          return AuthenticationRequestResponse(user, true, "", AppConsts.PERSISTED_USER_TO_STORAGE);
+        }else{
+          debugPrint('Error: ${AppConsts.COULD_NOT_PERSIST_USER}');
+          return AuthenticationRequestResponse(UserModel.getNullUser(), false, "", AppConsts.COULD_NOT_PERSIST_USER);
+        }
+      });
+      // If we reached here something failed.
+      debugPrint('Error: ${AppConsts.COULD_NOT_PERSIST_USER}');
+      return AuthenticationRequestResponse(UserModel.getNullUser(), false, "", AppConsts.COULD_NOT_PERSIST_USER);
+
 
     }else{
       //  response will always be null if it is a error code: i.e. status 415
       //  We really need to catch all the types of responses and create a
       //  switch case and notify user of error.  For now just return null
 
-      return ParsedResponse(NO_INTERNET, UserModel.getNullUser());
+      debugPrint('Error: ${AppConsts.COULD_NOT_AUTHENTICATE_USER}');
+      return AuthenticationRequestResponse(
+          UserModel.getNullUser(),
+          false,
+          "Unable to login",
+          AppConsts.COULD_NOT_AUTHENTICATE_USER);
     }
+    
   }
 
   @override
   Future<UserModel?> currentUser() async {
 
-    var user = await LocalStorageService.getUserFromDisk();
-    if(user != null && user.authStatus == AuthStatus.signedIn && user.loginTimeStamp != null)
+    // UserModel variable to return
+    UserModel? currentUser = UserModel.getNullUser();
+
+    currentUser = LocalStorageService.getUserFromDisk();
+    if(currentUser != null && currentUser.authStatus == AuthStatus.signedIn && currentUser.loginTimeStamp != null)
+    {
+      //  Check Last login and token expiry
+      var lastLogin = currentUser.loginTimeStamp;
+      var timeNow = DateTime.now();
+      var duration = timeNow.difference(lastLogin!);
+      var minElapsed = duration.inMinutes;
+      //if (minElapsed > 15) /* actual 20 */
+      if (minElapsed > 15) /* actual 20 */
       {
-        //  Check Last login and token expiry
-        var lastLogin = user.loginTimeStamp;
-        var timeNow = DateTime.now();
-        var duration = timeNow.difference(lastLogin!);
-        var minElapsed = duration.inMinutes;
-        if (minElapsed > 15) /* actual 20 */
+        //  perform token refresh
+        var refreshedUser = await refreshTokenForUser(currentUser).then((refreshValue) async {
+          // If there was an error performing a refresh, we will ve sent and nul UserModel.
+          // So ust return refreshValue;
+          if(refreshValue != null && refreshValue.authStatus == AuthStatus.signedIn && refreshValue.loginTimeStamp != null)
           {
-            //  perform token refresh
-            await refreshTokenForUser(user);
+            currentUser = refreshValue;
+            return currentUser;
+          }else{
+            //  Any error would have been logged in original request to
+            //  refreshTokenForUser().  Don't throw Exception
+            //  return null user
+            return UserModel.getNullUser();
           }
-          else{
-            return user;
-        }
-        return user;
-      }else{
-      //  handle not logged in / timestamp empty
-      // assume user is not logged in
-      return UserModel.getNullUser();
+        });
+        currentUser = refreshedUser;
+        return currentUser;
+      }
+      else{
+        //  Token is with the refresh time window, so just
+        //  return user(value);
+        return currentUser;
+      }
     }
-    return null;
+    else{
+      return currentUser;
+    }
   }
 
   @override
-  Future<OperationStatus> refreshTokenForUser(UserModel savedUser) async {
+  Future<UserModel?> refreshTokenForUser(UserModel savedUser) async {
+
+    UserModel? userModel;
 
     if(( savedUser.loginTimeStamp == null
         || ( savedUser.refreshTokenExpiry == null)
@@ -124,12 +161,12 @@ class AuthenticationService implements AuthenticationServiceBase{
         || (savedUser.jwtToken.isEmpty)
         || (savedUser.loginTimeStamp == null)
         )){
-            return OperationStatus(false, AppConsts.NO_SAVED_USER_INSTANCE.toString());
-    }else{
+            debugPrint("Could not refresh token for user. ErrorType: ${AppConsts.NO_SAVED_USER_INSTANCE} ");
+            userModel = UserModel.getNullUser();
+        }else{
       // now we have the user tokens
-      var refreshTimestamp = DateTime.now();
+      //var refreshTimestamp = DateTime.now();
       var url = AppConsts.getUrl(ApiRequestType.refreshToken).toString();
-
       var loginTimeStamp = DateTime.now();
       final response = await http.post(
           Uri.parse(url),
@@ -148,8 +185,6 @@ class AuthenticationService implements AuthenticationServiceBase{
         var rToken = refreshToken.substring(idx+1).trim();
         var tokenExpiry = getTokenExpiry(rawCookie);
         final responseJson = json.decode(response.body);
-        var userData = LoginModel.fromJson(responseJson);
-
 
         // Update fields,
         savedUser.loginTimeStamp = loginTimeStamp;
@@ -159,29 +194,58 @@ class AuthenticationService implements AuthenticationServiceBase{
         //  save the data by calling persistUser(), which
         //  will overwrite the stale values with the fresh
         //  ones above.
-        var updateStatus = await LocalStorageService.persistUser(savedUser);
 
-
-        if(updateStatus.success)
+        var updateUserResult = await LocalStorageService.persistUser(savedUser).then((updateStatusValue) async {
+          //  Do something with updateStatusValue
+          if(updateStatusValue.success)
           {
-            return OperationStatus(true, "Successfully refreshed tokens for user.");
+            userModel = savedUser;
           }
-        else{
-          return OperationStatus(false, "Could refresh user tokens");
-        }
+          else{
+            debugPrint("Could not refresh token for user. ErrorType: ${AppConsts.NO_SAVED_USER_INSTANCE} ");
+            userModel = UserModel.getNullUser();
+          }
+        });
       }
       else{
         // Really need to catch other errors from server like 500, which could
         //  could be transitory.
-        return OperationStatus(false, "Could not contact server");
+
+        debugPrint("Could not refresh token for user. ErrorType: ${AppConsts.REFRESHED_TOKENS_FOR_USER_FAIL} ");
+        userModel = UserModel.getNullUser();
       }
     }
-    //
+
+    return userModel;
   }
 
   //  We're using jwt tokens, which is stateless, we just need to remove the
   //  stored token and clear all settings
+
+  UserModel _updateUser(
+      LoginModel userData,
+      DateTime loginTimeStamp,
+      String rToken,
+      DateTime tokenExpiry){
+    var user = UserModel(
+      userData.id,
+      userData.firstName,
+      userData.lastName,
+      userData.jwtToken,/* short lived JWT access token */
+      userData.initials,
+      userData.photo,
+      userData.emailAddress,
+      AuthStatus.signedIn,
+      loginTimeStamp,/* login timestamp */
+      rToken, /* refreshToken*/
+      tokenExpiry,/* RefreshToken expiry */);
+    return user;
+  }
+
+  /// Sign out current user is not null and is logged in.
+  /// Removes stored token and clears local storage
   UserModel signOut()  {
+    // This is a future that is not being handled correctly
     LocalStorageService.deleteUser();
     return UserModel.getNullUser();
   }

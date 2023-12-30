@@ -5,7 +5,11 @@
 //  instance for our service.
 //
 //  https://www.filledstacks.com/snippet/shared-preferences-service-in-flutter-for-code-maintainability/
+import 'dart:async';
+import 'dart:async';
+
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 import '../app_constants.dart';
 import '../models/user.dart';
 import '../request_response/operation_status.dart';
@@ -48,7 +52,7 @@ class LocalStorageService {
     );
   }*/
 
-  static Future<UserModel?> getUserFromDisk() async {
+  static UserModel? getUserFromDisk() {
   try{
     //  To guard access to a property or method of an object that might be null,
     //  put a question mark (?) before the dot (.):
@@ -81,13 +85,9 @@ class LocalStorageService {
     );
 
     return user;
-  }catch(err){// Let's see what this error is before deleting the user...
-    //  delete data, as it's probably corrupt or there's some other
-    //  error.
-
-    await deleteUser();
+  }catch(err){
     return UserModel.getNullUser();
-  }
+    }
   }
 
 
@@ -105,9 +105,16 @@ class LocalStorageService {
       await _preferences?.remove( AppConsts.loginTimeStamp);
       await _preferences?.remove( AppConsts.refreshToken);
       await _preferences?.remove( AppConsts.refreshTokenExpiry);
-      return OperationStatus(true, "Successfully deleted user.");
+      return OperationStatus(
+          true,
+          "Successfully deleted user.",
+          AppConsts.OPERATION_SUCCESS
+      );
     } catch (err) {
-      return OperationStatus(false, "Delete operation failed.");
+      return OperationStatus(
+          false,
+          "Delete operation failed.",
+           AppConsts.COULD_NOT_DELETE_STORED_USER);
     }
   }
 
@@ -131,6 +138,40 @@ class LocalStorageService {
 
   static Future<OperationStatus> persistUser(UserModel userToSave) async {
     try {
+      var futureList = <Future>[
+        _preferences!.setString( AppConsts.userId, userToSave.id),
+        _preferences!.setString( AppConsts.firstName, userToSave.firstName),
+        _preferences!.setString( AppConsts.lastName, userToSave.lastName),
+        _preferences!.setString( AppConsts.jwtToken, userToSave.jwtToken),
+        _preferences!.setString( AppConsts.initials, userToSave.initials),
+        _preferences!.setString( AppConsts.photo, userToSave.photo),
+        _preferences!.setString( AppConsts.emailAddress, userToSave.emailAddress),
+        _preferences!.setString( AppConsts.authStatus, userToSave.authStatus.toString()),
+        _preferences!.setString( AppConsts.loginTimeStamp, userToSave.loginTimeStamp.toString()),
+        //  Make sure below is not null
+        _preferences!.setString( AppConsts.refreshToken, userToSave.refreshToken.toString()),
+        _preferences!.setString( AppConsts.refreshTokenExpiry, userToSave.refreshTokenExpiry.toString())
+      ];
+
+      var result = await Future.wait(futureList);
+      //  Do something with persistStatus value
+      var persistenceResult = result.any((value) => value == false);
+      if(persistenceResult){
+        debugPrint('Could not persist user');
+        return OperationStatus(false, "Could not persist user", AppConsts.COULD_NOT_PERSIST_USER);
+      }else{
+        debugPrint('Successfully updated user data');
+        return OperationStatus(true, 'Successfully saved user data.', AppConsts.OPERATION_SUCCESS);
+      }
+
+    } catch (err) {
+      debugPrint(err.toString());
+      return OperationStatus(false, "Could not persist user", AppConsts.COULD_NOT_PERSIST_USER);
+    }
+  }
+
+  /*static Future<OperationStatus> persistUser(UserModel userToSave) async {
+    try {
 
       await _preferences?.setString( AppConsts.userId, userToSave.id);
       await _preferences?.setString( AppConsts.firstName, userToSave.firstName);
@@ -141,15 +182,15 @@ class LocalStorageService {
       await _preferences?.setString( AppConsts.emailAddress, userToSave.emailAddress);
       await _preferences?.setString( AppConsts.authStatus, userToSave.authStatus.toString());
       await _preferences?.setString( AppConsts.loginTimeStamp, userToSave.loginTimeStamp.toString());
-      //  Mske ure below is not null
+      //  Make sure below is not null
       await _preferences?.setString( AppConsts.refreshToken, userToSave.refreshToken.toString());
       await _preferences?.setString( AppConsts.refreshTokenExpiry, userToSave.refreshTokenExpiry.toString());
 
-      return OperationStatus(true, 'Successfully saved user data.');
+      return OperationStatus(true, 'Successfully saved user data.', AppConsts.OPERATION_SUCCESS);
     } catch (err) {
-      return OperationStatus(false, err.toString());
+      return OperationStatus(false, err.toString(), AppConsts.COULD_NOT_PERSIST_USER);
     }
-  }
+  }*/
 
   static OperationStatus saveStringToDisk(String key, String content) {
 
@@ -158,9 +199,9 @@ class LocalStorageService {
     //  put a question mark (?) before the dot (.):
     try {
       _preferences?.setString(key, content);
-      return OperationStatus(true, 'Save user with $key and valie: $content');
+      return OperationStatus(true, 'Save user with $key and valie: $content', AppConsts.OPERATION_SUCCESS);
     } catch (err) {
-      return OperationStatus(false, 'Could not save data with $key.');
+      return OperationStatus(false, 'Could not save data with $key.', AppConsts.COULD_NOT_PERSIST_KEYVALUE);
     }
   }
 }

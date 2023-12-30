@@ -1,0 +1,2 @@
+A dynamic and visually appealing movies app built using the MVVM architecture
+    https://flutterawesome.com/a-dynamic-and-visually-appealing-movies-app-built-using-the-mvvm-architecture/\
