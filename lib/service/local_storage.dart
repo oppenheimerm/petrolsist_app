@@ -6,7 +6,6 @@
 //
 //  https://www.filledstacks.com/snippet/shared-preferences-service-in-flutter-for-code-maintainability/
 import 'dart:async';
-import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -75,9 +74,10 @@ class LocalStorageService {
       (_preferences?.getString( AppConsts.firstName) ?? ""),
       (_preferences?.getString( AppConsts.lastName) ?? ""),
       (_preferences?.getString( AppConsts.jwtToken) ?? ""),
-      (_preferences?.getString( AppConsts.initials) ?? ""),
       (_preferences?.getString( AppConsts.photo) ?? ""),
       (_preferences?.getString( AppConsts.emailAddress) ?? ""),
+      (_preferences?.getString( AppConsts.mobile) ?? ""),
+      (_preferences?.getInt( AppConsts.distanceUnit) ?? 1),
       authStatus,
       timeStamp,
       _preferences?.getString( AppConsts.refreshToken),
@@ -92,24 +92,38 @@ class LocalStorageService {
 
 
 
+  //  TODO You're not properly handling this async code!
   static Future<OperationStatus> deleteUser() async {
     try {
-      await _preferences?.remove( AppConsts.userId);
-      await _preferences?.remove( AppConsts.firstName);
-      await _preferences?.remove( AppConsts.lastName);
-      await _preferences?.remove( AppConsts.jwtToken);
-      await _preferences?.remove( AppConsts.initials);
-      await _preferences?.remove( AppConsts.photo);
-      await _preferences?.remove( AppConsts.emailAddress);
-      await _preferences?.remove( AppConsts.authStatus);
-      await _preferences?.remove( AppConsts.loginTimeStamp);
-      await _preferences?.remove( AppConsts.refreshToken);
-      await _preferences?.remove( AppConsts.refreshTokenExpiry);
-      return OperationStatus(
+      var futureList = <Future>[
+        _preferences!.remove( AppConsts.userId),
+        _preferences!.remove( AppConsts.firstName),
+        _preferences!.remove( AppConsts.lastName),
+        _preferences!.remove( AppConsts.jwtToken),
+        _preferences!.remove( AppConsts.photo),
+        _preferences!.remove( AppConsts.emailAddress),
+        _preferences!.remove( AppConsts.mobile),
+        _preferences!.remove( AppConsts.distanceUnit),
+        _preferences!.remove( AppConsts.authStatus),
+        _preferences!.remove( AppConsts.loginTimeStamp),
+        _preferences!.remove( AppConsts.refreshToken),
+        _preferences!.remove( AppConsts.refreshTokenExpiry),
+      ];
+      var result = await Future.wait(futureList);
+      var persistenceResult = result.any((value) => value == false);
+      if(persistenceResult){
+        debugPrint('Could not persist user');
+        return OperationStatus(
+          false,
+          "Delete operation failed.",
+          AppConsts.COULD_NOT_DELETE_STORED_USER);
+      }else{
+        return OperationStatus(
           true,
           "Successfully deleted user.",
           AppConsts.OPERATION_SUCCESS
-      );
+          );
+      }
     } catch (err) {
       return OperationStatus(
           false,
@@ -118,23 +132,6 @@ class LocalStorageService {
     }
   }
 
-  /*static Future<OperationStatus> updateRefreshTokensForUser(
-      String jwtToken,
-      DateTime loginTimeStamp,
-      String refreshToken,
-      DateTime refreshTokenExpiry
-      ) async{
-    try{
-      await _preferences?.setString( AppConsts.jwtToken, jwtToken);
-      await _preferences?.setString( AppConsts.loginTimeStamp, loginTimeStamp.toString());
-      await _preferences?.setString( AppConsts.refreshToken, refreshToken);
-      await _preferences?.setString( AppConsts.refreshTokenExpiry, AppConsts.refreshTokenExpiry.toString());
-
-      return OperationStatus(true, 'Successfully updated refresh data.');
-    }catch(err){
-      return OperationStatus(false, 'Unable to refresh user data: $err.');
-    }
-  }*/
 
   static Future<OperationStatus> persistUser(UserModel userToSave) async {
     try {
@@ -143,9 +140,10 @@ class LocalStorageService {
         _preferences!.setString( AppConsts.firstName, userToSave.firstName),
         _preferences!.setString( AppConsts.lastName, userToSave.lastName),
         _preferences!.setString( AppConsts.jwtToken, userToSave.jwtToken),
-        _preferences!.setString( AppConsts.initials, userToSave.initials),
         _preferences!.setString( AppConsts.photo, userToSave.photo),
         _preferences!.setString( AppConsts.emailAddress, userToSave.emailAddress),
+        _preferences!.setString( AppConsts.mobile, userToSave.mobileNumber),
+        _preferences!.setInt( AppConsts.distanceUnit, userToSave.distanceUnit),
         _preferences!.setString( AppConsts.authStatus, userToSave.authStatus.toString()),
         _preferences!.setString( AppConsts.loginTimeStamp, userToSave.loginTimeStamp.toString()),
         //  Make sure below is not null

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 class Headline extends StatelessWidget {
   final String title;
+  final Color? colour;
+
   const Headline({
     super.key,
     required this.title,
+    required this.colour
   });
 
   @override
@@ -12,8 +15,9 @@ class Headline extends StatelessWidget {
     return Text(
       title,
       style: TextStyle(
-        fontSize: 26,
+        fontSize: 28,
         fontWeight: FontWeight.bold,
+        color: colour!,
       ),
     );
   }

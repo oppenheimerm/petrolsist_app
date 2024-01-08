@@ -16,6 +16,7 @@ class AuthViewModel with ChangeNotifier {
 
   // Getter Methods
   bool get loginLoading => _loginLoading;
+
   bool get signUpLoading => _signUpLoading;
 
   // Setter Methods
@@ -30,33 +31,31 @@ class AuthViewModel with ChangeNotifier {
   }
 
   //  Future loginApi(dynamic data, BuildContext context) async
-  Future<OperationStatus> authenticateUser(String username, String password) async {
+  Future<OperationStatus?> authenticateUser(
+      String username,
+      String password) async {
 
+    OperationStatus status = OperationStatus(false, "Could not complete login", AppConsts.COULD_NOT_AUTHENTICATE_USER);
     //  Do we have network connectivity?
-    var status = await _networkService.psGetNetworkStatus();
-    if (status == true) {
-      // Set the login loading state to true to show the loading indicator.
-      setLoginLoading(true);
+    await _networkService.psGetNetworkStatus().then((value) async {
 
-      var authRequestResponse = await _authenticationService.requestLoginAPI(
-          username, password);
-      if (authRequestResponse.success) {
-        //  head home
-        setLoginLoading(false);
-        return OperationStatus(
-            true, "Login Successful", AppConsts.OPERATION_SUCCESS);
-      } else {
-        return OperationStatus(
-            false, "", AppConsts.USER_NOT_FOUND
-        );
+      if(value){
+        //  Connection Ok, send login
+        await _authenticationService.requestLoginAPI
+          (username, password).then((value) {
+          status = value;
+        });
+
       }
-    }
-    else{
-      return OperationStatus(false, "Please check your network connection", AppConsts.NO_NETWORK_SERVICE);
-    }
+      else{
+        // Could not connect to network
+        status = OperationStatus(false, "Could not detect network", AppConsts.NO_NETWORK_SERVICE);
+        debugPrint('Could not detect network while attempting to login: ${AppConsts.NO_NETWORK_SERVICE}');
+      }
 
+    });
+    return status;
 
   }
-
   //  Future<OperationStatus> registerUser(){}
 }
