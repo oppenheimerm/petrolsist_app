@@ -53,9 +53,10 @@ class HomeViewModel with ChangeNotifier{
     return _loadingMap;
   }
 
-  void logout(BuildContext context) {
-    _authenticationService.signOut();
-    Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
+  void logout(BuildContext context) async{
+    await _authenticationService.signOut().then((value) {
+      Navigator.pushReplacementNamed(context, AppConsts.rootLogin);
+    });
   }
 
 }

@@ -91,6 +91,7 @@ class AppConsts{
   //static const String baseUrl = "https://psusersapi.azurewebsites.net";
   //static const String baseUrl = "http://192.168.1.152:8000";
   static const String baseUrl = "http://10.0.2.2:5281";
+  static const String memberFolderPostfix = "/usersimages";
 
   //  Keys
   //    UserModel keys for storage
@@ -98,9 +99,10 @@ class AppConsts{
   static const String firstName = 'firstName';
   static const String lastName = 'lastName';
   static const String jwtToken = 'jwtToken';
-  static const String initials = 'initials';
   static const String photo = 'photo';
   static const String emailAddress = 'emailAddress';
+  static const String mobile = 'mobileNumber';
+  static const String distanceUnit = 'distanceUnit';
   static const String authStatus = 'authStatus';
   static const String loginTimeStamp = 'loginTimeStamp';
   static const String refreshToken = 'refreshToken';
@@ -121,9 +123,12 @@ class AppConsts{
 
 
   //  const network Errors
-  static const int USER_NOT_FOUND = 404;
+  static const int UNAUTHORIZED = 401;
+  static const int NOT_FOUND = 404;
   //  503 Service Unavailable
+  static const int INTERNAL_SERVER_ERROR = 500;
   static const int NO_NETWORK_SERVICE = 503;
+
 
 
   static String? getUrl(ApiRequestType request){

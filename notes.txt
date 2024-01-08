@@ -1,2 +1,12 @@
 A dynamic and visually appealing movies app built using the MVVM architecture
     https://flutterawesome.com/a-dynamic-and-visually-appealing-movies-app-built-using-the-mvvm-architecture/\
+
+Edit Profile UI - Settings UI Tutorial - Part 1
+  https://www.youtube.com/watch?v=WjmQYqRW4zI&t=92s
+Part 2
+    https://www.youtube.com/watch?v=ylqY8vixHxU
+
+
+
+Home Screen UI || Taxi App Flutter
+https://www.youtube.com/watch?v=MZYGO9ZvVSk&list=PLWNYjcx_ZHPco3yijOw-KwBQwjjcHc5Rj&index=10

@@ -4,18 +4,20 @@ class LoginModel {
   String firstName;
   String lastName;
   String jwtToken;
-  String initials;
-  String photo;
+    String photo;
   String emailAddress;
+  String mobileNumber;
+  int distanceUnit;
 
   LoginModel(
       this.id,
       this.firstName,
       this.lastName,
       this.jwtToken,
-      this.initials,
       this.photo,
-      this.emailAddress
+      this.emailAddress,
+      this.mobileNumber,
+      this.distanceUnit
       );
 
   LoginModel.fromJson(Map<String, dynamic> json)
@@ -23,9 +25,10 @@ class LoginModel {
         firstName = json['firstName'],
         lastName = json['lastName'],
         jwtToken = json['jwtToken'],
-        initials = json['initials'],
         photo = json['photo'],
-        emailAddress = json['emailAddress'];
+        emailAddress = json['emailAddress'],
+        mobileNumber = json['mobileNumber'],
+        distanceUnit = json['distanceUnit'];
 
   Map<String, dynamic> toJson() =>
       {
@@ -33,8 +36,9 @@ class LoginModel {
         'firstName': firstName,
         'lastName': lastName,
         'jwtToken' : jwtToken,
-        'initials' : initials,
         'photo' : photo,
         'emailAddress' : emailAddress,
+        'mobileNumber': mobileNumber,
+        'distanceUnit': distanceUnit
       };
 }

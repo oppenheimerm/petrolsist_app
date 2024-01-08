@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geolocator_platform_interface/src/models/position.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:petrolsist_app/resources/colours.dart';
+import 'package:petrolsist_app/views/edit_profile.dart';
+import 'package:petrolsist_app/views/settings_view.dart';
 import 'package:provider/provider.dart';
 
 import '../components/component_shimmering_mapLoading.dart';
@@ -74,7 +76,7 @@ class _HomeViewState extends State<HomeView> {
 
 
     return Scaffold(
-      appBar: homeAppBar(),
+      appBar: homeAppBar(false),
       body: ChangeNotifierProvider<HomeViewModel>(
         create: (BuildContext context) => _homeViewModel,
         child:Consumer<HomeViewModel>(builder: (context, value, _){
@@ -86,7 +88,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  AppBar homeAppBar() {
+  AppBar homeAppBar([bool? showBackButton]) {
     return AppBar(
       title: const Text("PetrolSist"),
       centerTitle: true,
@@ -94,8 +96,12 @@ class _HomeViewState extends State<HomeView> {
       backgroundColor: AppColours.transparentColour,
       elevation: 0,
       actions: [
-        IconButton(onPressed: () =>{
-
+        IconButton(
+          onPressed: () =>{
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const EditProfileView()),
+            )
         },
           icon: const Icon(Icons.settings_sharp),),
         IconButton(

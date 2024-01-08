@@ -3,6 +3,7 @@ import 'package:petrolsist_app/app_constants.dart';
 import 'package:petrolsist_app/views/home_view.dart';
 import 'package:petrolsist_app/views/login_view.dart';
 import 'package:petrolsist_app/views/route_not_found.dart';
+import 'package:petrolsist_app/views/signup_view.dart';
 import 'package:petrolsist_app/views/splash_view.dart';
 
 
@@ -21,10 +22,10 @@ class Routes {
         return MaterialPageRoute(
           builder: (context) => const HomeView(),
         );
-      /*case AppConsts.rootSignup:
+      case AppConsts.rootSignup:
         return MaterialPageRoute(
-          builder: (context) => SignUpView(),
-        );*/
+          builder: (context) => const SignUpView(),
+        );
       default:
         return MaterialPageRoute(
           builder: (context) => const NotFoundView(),

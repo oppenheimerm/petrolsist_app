@@ -20,8 +20,8 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
 
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   //  When value is replaced with something that is not equal to the old
   //  value as evaluated by the equality operator ==, this class notifies
@@ -33,12 +33,12 @@ class _LoginViewState extends State<LoginView> {
   //  immutable data types. ***
   //
   //  https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html
-  ValueNotifier<bool> _obscurePass = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> _obscurePass = ValueNotifier<bool>(true);
 
   //  FocusNode - used by a stateful widget to obtain the keyboard focus
   //  and to handle keyboard events.
-  FocusNode _emailFocusNode = FocusNode();
-  FocusNode _passwordFocusNode = FocusNode();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
 
   //  Use trim() method removes any leading / trailing  from user input before
   //  using it in the application
@@ -88,24 +88,32 @@ class _LoginViewState extends State<LoginView> {
       } else if (_passwordController.text.length < 6) {
         Utils.snackBar("Password must be more than 6 letter's", context);
       } else {
-        final _authViewModel =
+        final authViewModel =
         Provider.of<AuthViewModel>(context, listen: false);
-        final authenticateUserStatus = await _authViewModel.authenticateUser(
+        final authenticateUserStatus = await authViewModel.authenticateUser(
             _emailController.text.trim().toString(),
             _passwordController.text.trim().toString()
-        );
-        if(context.mounted){
-          var status = authenticateUserStatus;
-          if(status.success)
+        ).then((status) {
+          if(context.mounted){
+            if(status != null)
             {
-              // Navigate to the home screen using the named route.
-              Navigator.pushNamed(context, AppConsts.rootHome);
+              if(status.success)
+              {
+                // Navigate to the home screen using the named route.
+                Navigator.pushNamed(context, AppConsts.rootHome);
+              }else{
+                var errMsg = status.errorMessage ?? "Could not log in";
+                debugPrint(errMsg);
+                Utils.snackBar(errMsg, context);
+              }
             }else{
-            var errMsg = status.errorMessage ?? "Could not log in";
-            debugPrint(errMsg);
-            Utils.snackBar(errMsg, context);
+              //  Let user know
+              // Error is logged further up the chain as either a
+              //  network error or auth
+              Utils.snackBar("Could not login, please contact help desk.", context);
+            }
           }
-        }
+        });
       }
     }
 
@@ -134,13 +142,13 @@ class _LoginViewState extends State<LoginView> {
       double height,
       void Function() textFieldValidate, BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30.0),
+      padding: const EdgeInsets.symmetric(horizontal: 28.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const CheckCircleIcon(),
           SizedBox(height: height * .03),
-          const Headline(title: "Welcome!!"),
+          const Headline(title: "PetrolAssist", colour: AppColours.blackColour1,),
           SizedBox(height: height * .04),
           email(),
           SizedBox(height: height * .02),
@@ -207,16 +215,21 @@ class _LoginViewState extends State<LoginView> {
           obscuringCharacter: '#', // Password secured by showing -> #######
           focusNode: _passwordFocusNode,
           decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(40),
+            ),
+            filled: true,
+            fillColor: AppColours.blackColour1.withOpacity(0.85),
             hintText: "Password",
-            prefixIcon: const Icon(Icons.lock_open_outlined),
+            prefixIcon: const Icon(Icons.lock_sharp),
             suffixIcon: InkWell(
               onTap: () {
                 _obscurePass.value = !_obscurePass.value;
               },
               child: Icon(
                 _obscurePass.value
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
+                    ? Icons.visibility_off_sharp
+                    : Icons.visibility_sharp,
               ),
             ),
           ),
@@ -227,18 +240,33 @@ class _LoginViewState extends State<LoginView> {
 
   TextField email() {
     return TextField(
+      style: const TextStyle(
+      ),
       controller: _emailController,
       keyboardType: TextInputType.emailAddress,
       focusNode: _emailFocusNode,
       onSubmitted: (value) {
         // After submitting email, click done on keyboard, focus on the password bar
-
         Utils.changeFocusNode(context,
             current: _emailFocusNode, next: _passwordFocusNode);
       },
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(40),
+        ),
+        filled: true,
+        fillColor: AppColours.blackColour1.withOpacity(0.85),
         hintText: "Email",
-        prefixIcon: Icon(Icons.email_outlined),
+        hintStyle: const TextStyle(
+          color: Colors.white,
+        ),
+        prefixIcon: const Icon(Icons.email_sharp),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(
+            color: Colors.white,
+          ),
+          borderRadius: BorderRadius.circular(40),
+        ),
       ),
     );
   }
